@@ -258,19 +258,21 @@ class Solr(object):
 
         try:
             # Bytes all the way down.
-            # Except the ``url``. Requests on Py3 *really* wants that to be a
-            # string, not bytes.
+            # Except the ``url`` and ``headers``. Requests on Py3 *really*
+            # wants those to be strings, not bytes.
             bytes_body = body
-            bytes_headers = {}
+            _headers = {}
 
             if bytes_body is not None:
                 bytes_body = force_bytes(body)
 
-            if headers is not None:
+            if headers is not None and not IS_PY3:
                 for k, v in headers.items():
-                    bytes_headers[force_bytes(k)] = force_bytes(v)
+                    _headers[force_bytes(k)] = force_bytes(v)
+            else:
+                _headers = headers
 
-            resp = requests_method(url, data=bytes_body, headers=bytes_headers, files=files,
+            resp = requests_method(url, data=bytes_body, headers=_headers, files=files,
                                    timeout=self.timeout)
         except requests.exceptions.Timeout as err:
             error_message = "Connection to server '%s' timed out: %s"
